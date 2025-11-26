@@ -4,15 +4,23 @@ This project uses [Jupytext](https://jupytext.readthedocs.io/) to maintain noteb
 
 ## Working with Notebooks
 
+### Folder Structure
+
+- **notebooks/**: Contains source `.py` files (tracked in git)
+- **juptextsync/**: Contains generated `.ipynb` files (excluded from git)
+
+All `.ipynb` files are automatically generated from `.py` files and stored in the `juptextsync/` folder.
+
 ### Converting .py to .ipynb
 
 To convert a `.py` notebook to `.ipynb` for use in Jupyter/Colab:
 
 ```bash
-jupytext --to notebook colab_train.py
+cd notebooks
+jupytext --to notebook --output ../juptextsync/colab_train.ipynb colab_train.py
 ```
 
-This creates `colab_train.ipynb` which you can open in Jupyter or upload to Colab.
+This creates `juptextsync/colab_train.ipynb` which you can open in Jupyter or upload to Colab.
 
 ### Pairing .py and .ipynb
 
@@ -45,14 +53,15 @@ print("Hello World")
 
 1. Convert to `.ipynb`:
 ```bash
-jupytext --to notebook colab_train.py
+cd notebooks
+jupytext --to notebook --output ../juptextsync/colab_train.ipynb colab_train.py
 ```
 
-2. Upload the generated `.ipynb` file to Colab
+2. Upload `juptextsync/colab_train.ipynb` to Colab
 
 3. When done, download and convert back:
 ```bash
-jupytext --to py:percent downloaded_notebook.ipynb
+jupytext --to py:percent --output notebooks/colab_train.py downloaded_notebook.ipynb
 ```
 
 ## Available Notebooks
@@ -69,9 +78,10 @@ Complete training pipeline for Google Colab with GPU support.
 **To use:**
 ```bash
 # Convert to notebook
-jupytext --to notebook colab_train.py
+cd notebooks
+jupytext --to notebook --output ../juptextsync/colab_train.ipynb colab_train.py
 
-# Upload colab_train.ipynb to Colab
+# Upload juptextsync/colab_train.ipynb to Colab
 ```
 
 ## Benefits of Jupytext
@@ -84,14 +94,25 @@ jupytext --to notebook colab_train.py
 
 ## Configuration
 
-The project `.gitignore` excludes `*.ipynb` files, so only `.py` versions are tracked in git.
+The project `.gitignore` excludes:
+- `*.ipynb` files (all notebook files)
+- `juptextsync/` folder (generated notebooks)
 
-To work with notebooks:
-1. Clone repository (contains `.py` files)
-2. Convert to `.ipynb` when needed: `jupytext --to notebook *.py`
-3. Edit in Jupyter/Colab
-4. Convert back to `.py` before committing: `jupytext --to py:percent *.ipynb`
-5. Commit only the `.py` files
+Only `.py` versions in `notebooks/` are tracked in git.
+
+**Workflow:**
+1. Clone repository (contains `.py` files in `notebooks/`)
+2. Generate `.ipynb` when needed:
+   ```bash
+   cd notebooks
+   jupytext --to notebook --output ../juptextsync/colab_train.ipynb colab_train.py
+   ```
+3. Edit `juptextsync/*.ipynb` in Jupyter/Colab
+4. Convert back to `.py` before committing:
+   ```bash
+   jupytext --to py:percent --output notebooks/colab_train.py ../juptextsync/colab_train.ipynb
+   ```
+5. Commit only the `.py` files in `notebooks/`
 
 ## Automatic Conversion (Optional)
 

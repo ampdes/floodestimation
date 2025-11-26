@@ -47,6 +47,9 @@ venv.bak/
 *.ipynb_checkpoints/
 *.ipynb
 
+# Jupytext synced notebooks (generated from .py files)
+juptextsync/
+
 # PyTorch
 *.pth
 *.pt

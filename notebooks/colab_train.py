@@ -95,14 +95,93 @@ print(f"Test: {len(test_df)} samples")
 print(f"\nTotal: {len(train_df) + len(val_df) + len(test_df)} samples")
 
 # %% [markdown]
-# ## 8. Train Model
+# ## 8. Test Pretrained Model (Before Training)
+#
+# Let's test the model with pretrained ImageNet weights to see how it performs before training on flood data.
+
+# %%
+import torch
+import numpy as np
+from PIL import Image
+import matplotlib.pyplot as plt
+from src.models.unet import create_model
+from torchvision import transforms
+
+# Create model with pretrained ImageNet weights
+model = create_model(
+    name='unet',
+    encoder='resnet34',
+    encoder_weights='imagenet',
+    in_channels=3,
+    classes=1,
+    activation='sigmoid'
+)
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model = model.to(device)
+model.eval()
+
+print(f"Model loaded on {device}")
+print(f"Total parameters: {sum(p.numel() for p in model.parameters()) / 1e6:.2f}M")
+
+# %% [markdown]
+# ### Run Inference on Sample Image
+
+# %%
+# Load a sample image
+image_path = 'data/train/image/0.jpg'
+mask_path = 'data/train/mask/0.png'
+
+# Load and preprocess image
+image = Image.open(image_path).convert('RGB')
+mask_gt = Image.open(mask_path).convert('L')
+
+# Preprocessing transform (same as training)
+transform = transforms.Compose([
+    transforms.Resize((512, 512)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
+# Transform image
+image_tensor = transform(image).unsqueeze(0).to(device)
+
+# Run inference
+with torch.no_grad():
+    output = model(image_tensor)
+    prediction = (output.squeeze().cpu().numpy() > 0.5).astype(np.uint8)
+
+# Visualize results
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+axes[0].imshow(image)
+axes[0].set_title('Original Image')
+axes[0].axis('off')
+
+axes[1].imshow(mask_gt, cmap='gray')
+axes[1].set_title('Ground Truth')
+axes[1].axis('off')
+
+axes[2].imshow(prediction, cmap='gray')
+axes[2].set_title('Pretrained Model Output\n(Before Training)')
+axes[2].axis('off')
+
+plt.tight_layout()
+plt.show()
+
+print("\nNote: The pretrained model has only ImageNet weights (not trained on flood data).")
+print("The output will likely be poor - this is expected!")
+print("After training on our flood dataset, accuracy will improve significantly.")
+
+# %% [markdown]
+# ## 9. Train Model
 
 # %%
 # Train with default config
 # !python src/training/train.py --config config/train_config.yaml
 
 # %% [markdown]
-# ## 9. Monitor Training (Optional)
+# ## 10. Monitor Training (Optional)
 #
 # If you want to visualize training in real-time, you can use TensorBoard:
 
@@ -112,7 +191,7 @@ print(f"\nTotal: {len(train_df) + len(val_df) + len(test_df)} samples")
 # %tensorboard --logdir outputs/logs
 
 # %% [markdown]
-# ## 10. View Training History
+# ## 11. View Training History
 
 # %%
 import json
@@ -151,7 +230,7 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
-# ## 11. Test Prediction
+# ## 12. Test Prediction
 
 # %%
 # Make prediction on a test image
@@ -161,7 +240,7 @@ plt.show()
 #     --output_dir outputs/predictions
 
 # %% [markdown]
-# ## 12. Visualize Results
+# ## 13. Visualize Results
 
 # %%
 from PIL import Image
@@ -189,7 +268,7 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
-# ## 13. Save Results to Google Drive
+# ## 14. Save Results to Google Drive
 
 # %%
 # Copy results back to Drive for persistence
@@ -201,7 +280,7 @@ plt.show()
 print("Results saved to Google Drive!")
 
 # %% [markdown]
-# ## 14. Download Best Model (Optional)
+# ## 15. Download Best Model (Optional)
 
 # %%
 from google.colab import files
