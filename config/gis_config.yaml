@@ -1,0 +1,176 @@
+# GIS Configuration for Flood Analysis
+
+# Digital Elevation Model (DEM) Configuration
+dem:
+  # DEM Source options: "USGS_3DEP" (10m, USA only), "SRTM" (30m, global)
+  source: "USGS_3DEP"
+
+  # Resolution in meters (10 for 3DEP, 30 for SRTM)
+  resolution: 10
+
+  # Auto-download DEM data if not available locally
+  download_auto: true
+
+  # Local cache directory for downloaded DEM tiles
+  cache_dir: "outputs/dem_cache"
+
+  # DEM preprocessing options
+  preprocessing:
+    fill_depressions: true        # Fill sinks in DEM for flow analysis
+    smooth: false                 # Apply smoothing filter
+    filter_size: 3                # Size of smoothing kernel if enabled
+
+# Georeferencing Configuration
+georeferencing:
+  # Source GeoTIFF with spatial reference information
+  source_tiff: "data/rawdata/2021-09-02_strip_4861038_composite.tif"
+
+  # Coordinate Reference System (will be read from TIFF, can override)
+  crs: null                       # Set to EPSG code if override needed (e.g., "EPSG:4326")
+
+  # Ground Sample Distance (resolution) in meters
+  gsd: 3.8                        # From Planet Labs metadata
+
+  # Handle predictions without georeference
+  fallback_method: "estimated"    # Options: "estimated", "manual", "skip"
+
+# Flood Extent Analysis Configuration
+extent:
+  # Minimum flood area threshold (in square meters)
+  min_area_threshold: 100         # Ignore regions smaller than this
+
+  # Calculate statistics
+  compute_statistics: true
+
+  # Export extent statistics to CSV
+  export_stats: true
+  stats_output: "outputs/gis/extent_statistics.csv"
+
+# Flow Direction Analysis Configuration
+flow:
+  # Flow direction algorithm
+  algorithm: "D8"                 # Options: "D8" (8-direction), "Dinf" (infinite direction)
+
+  # Flow accumulation threshold for stream network
+  accumulation_threshold: 1000    # Pixels with accumulation > this are streams
+
+  # Compute flow through flooded areas only
+  flooded_areas_only: true
+
+  # Export flow direction raster
+  export_flow_direction: true
+
+  # Export flow accumulation raster
+  export_flow_accumulation: true
+
+# Flood Depth Estimation Configuration
+depth:
+  # Method for depth estimation
+  method: "terrain_based"         # Options: "terrain_based", "boundary_elevation"
+
+  # Assume flat water surface within each connected component
+  flat_surface_assumption: true
+
+  # Boundary buffer distance (meters) for water surface estimation
+  boundary_buffer: 10
+
+  # Minimum depth threshold (meters) - depths below this are set to 0
+  min_depth_threshold: 0.1
+
+  # Maximum reasonable depth (meters) - cap depths above this
+  max_depth_threshold: 20
+
+  # Compute depth statistics
+  compute_statistics: true
+
+  # Export depth raster
+  export_depth_raster: true
+
+# Export Configuration
+export:
+  # Output directory
+  output_dir: "outputs/gis"
+
+  # Export formats to generate
+  formats:
+    - "geotiff"                   # Georeferenced TIFF
+    - "shapefile"                 # ESRI Shapefile
+    - "geojson"                   # GeoJSON
+
+  # Include KML for Google Earth
+  include_kml: false
+
+  # Compression for GeoTIFF (options: "none", "lzw", "deflate")
+  geotiff_compression: "lzw"
+
+  # Simplification tolerance for vector exports (in map units)
+  vector_simplify_tolerance: 1.0  # Simplify polygons to reduce file size
+
+  # Include attributes in vector exports
+  vector_attributes:
+    area: true                    # Flood area in m²
+    perimeter: true               # Perimeter in meters
+    mean_depth: true              # Average depth if available
+    max_depth: true               # Maximum depth if available
+    confidence: false             # Model confidence (if available)
+
+# Coordinate System Handling
+coordinate_systems:
+  # Input CRS (read from source TIFF)
+  input_crs: null                 # Auto-detected from source
+
+  # Output CRS for exports (null = use input CRS)
+  output_crs: null                # e.g., "EPSG:4326" for WGS84
+
+  # Reproject DEM to match flood image CRS
+  reproject_dem: true
+
+# Visualization Configuration
+visualization:
+  # Generate visualization outputs
+  create_visualizations: true
+
+  # Overlay flood on satellite image
+  overlay_flood_on_image: true
+
+  # Color scheme for depth maps
+  depth_colormap: "Blues"         # Matplotlib colormap
+
+  # Transparency for overlays
+  overlay_alpha: 0.6
+
+  # DPI for saved figures
+  figure_dpi: 300
+
+  # Output format for visualizations
+  viz_format: "png"               # Options: png, jpg, pdf
+
+# Processing Options
+processing:
+  # Number of parallel workers for processing
+  n_workers: 4
+
+  # Memory limit for large raster operations (in MB)
+  memory_limit: 4096
+
+  # Use tiling for large images
+  use_tiling: true
+  tile_size: 2048                 # Tile size in pixels
+
+  # Verbose output
+  verbose: true
+
+# Validation & Quality Control
+validation:
+  # Check CRS consistency
+  check_crs: true
+
+  # Validate DEM coverage (ensure it covers flood extent)
+  check_dem_coverage: true
+
+  # Check for NoData values in critical areas
+  check_nodata: true
+
+  # Generate quality report
+  generate_report: true
+  report_output: "outputs/gis/quality_report.txt"

@@ -1,0 +1,95 @@
+# Training Configuration for Flood Segmentation Model
+
+# Model Configuration
+model:
+  name: "unet"                    # Model architecture
+  encoder: "resnet34"             # Encoder backbone (resnet34, efficientnet-b3, mobilenet_v2)
+  encoder_weights: "imagenet"     # Pretrained weights
+  activation: "sigmoid"           # Output activation for binary segmentation
+  in_channels: 3                  # RGB input
+  classes: 1                      # Binary segmentation (flood/no-flood)
+
+# Training Parameters
+training:
+  batch_size: 8                   # Adjust based on GPU memory (16 for small images, 4-8 for 512x512)
+  epochs: 100                     # Maximum number of epochs
+  early_stopping_patience: 15     # Stop if no improvement for N epochs
+  learning_rate: 0.0001           # Initial learning rate
+  optimizer: "Adam"               # Optimizer (Adam, AdamW, SGD)
+  weight_decay: 0.0001            # L2 regularization
+
+  # Learning rate scheduler
+  scheduler:
+    type: "ReduceLROnPlateau"     # Type of scheduler
+    mode: "max"                   # Monitor metric mode (max for IoU)
+    factor: 0.5                   # Reduce LR by this factor
+    patience: 5                   # Wait N epochs before reducing LR
+    min_lr: 0.000001              # Minimum learning rate
+
+  # Loss function
+  loss:
+    type: "hybrid"                # Options: bce, dice, focal, hybrid
+    bce_weight: 0.5               # Weight for BCE loss (if hybrid)
+    dice_weight: 0.5              # Weight for Dice loss (if hybrid)
+
+  # Mixed precision training (faster on modern GPUs)
+  mixed_precision: true           # Enable automatic mixed precision (AMP)
+
+# Data Configuration
+data:
+  data_dir: "data/train"               # Base directory for training data
+  image_dir: "data/train/image"        # Directory containing images
+  mask_dir: "data/train/mask"          # Directory containing masks
+  metadata_file: "data/train/metadata.csv"  # Metadata CSV file
+
+  # Data splits
+  train_split: 0.70               # 70% for training (~142 images)
+  val_split: 0.15                 # 15% for validation (~30 images)
+  test_split: 0.15                # 15% for testing (~31 images)
+  random_seed: 42                 # For reproducible splits
+
+  # Image preprocessing
+  image_size: 512                 # Resize images to this size (512x512)
+  normalize: true                 # Normalize images
+  norm_mean: [0.485, 0.456, 0.406]  # ImageNet mean
+  norm_std: [0.229, 0.224, 0.225]   # ImageNet std
+
+  # Data augmentation (training only)
+  augmentation:
+    horizontal_flip: 0.5          # Probability of horizontal flip
+    vertical_flip: 0.5            # Probability of vertical flip
+    rotation_limit: 30            # Random rotation range (degrees)
+    brightness_limit: 0.2         # Brightness adjustment range
+    contrast_limit: 0.2           # Contrast adjustment range
+    grid_distortion: true         # Apply grid distortion
+    elastic_transform: true       # Apply elastic transform
+    optical_distortion: true      # Apply optical distortion
+
+  # Data loading
+  num_workers: 4                  # Number of workers for data loading (0 for Windows/debugging)
+  pin_memory: true                # Pin memory for faster GPU transfer
+
+# Checkpointing & Logging
+checkpoint:
+  save_dir: "outputs/models"      # Directory to save checkpoints
+  save_best: true                 # Save best model based on val_iou
+  save_last: true                 # Save last model checkpoint
+  monitor_metric: "val_iou"       # Metric to monitor for best model
+
+logging:
+  log_dir: "outputs/logs"         # Directory for logs
+  log_every_n_steps: 10           # Log training metrics every N steps
+  save_samples: true              # Save sample predictions during validation
+  num_samples: 5                  # Number of samples to save
+
+# Evaluation Metrics
+metrics:
+  - "iou"                         # Intersection over Union
+  - "dice"                        # Dice coefficient / F1
+  - "pixel_accuracy"              # Overall pixel accuracy
+  - "precision"                   # Precision for flood class
+  - "recall"                      # Recall for flood class
+  - "f1_score"                    # F1 score for flood class
+
+# Device Configuration
+device: "cuda"                    # Device to use (cuda, cpu, or specific GPU like cuda:0)
